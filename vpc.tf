@@ -1,6 +1,8 @@
 # vpc
 resource "aws_vpc" "main" {
-  cidr_block       = "10.1.0.0/16"
+  cidr_block                     = var.vpc_cidr
+  enable_dns_support             = var.enable_dns_support
+  enable_dns_hostnames           = var.enable_dns_hostnames
   instance_tenancy = "default"
 
   tags = {
@@ -10,10 +12,11 @@ resource "aws_vpc" "main" {
 
 # public subnets
 resource "aws_subnet" "publicSubnet-1" {
-  vpc_id     = aws_vpc.main.id
-  cidr_block = "10.1.1.0/24"
+  count                   = var.preferred_number_of_public_subnets == null ? length(data.aws_availability_zones.available.names) : var.preferred_number_of_public_subnets
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = cidrsubnet(var.vpc_cidr, 8, count.index)
   map_public_ip_on_launch = true
-  availability_zone       = "us-east-1a"
+  availability_zone       = data.aws_availability_zones.available.names[count.index]
 
   tags = {
     Name = "publicSubnet-1"
