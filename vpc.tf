@@ -11,73 +11,39 @@ resource "aws_vpc" "main" {
 }
 
 # public subnets
-resource "aws_subnet" "publicSubnet-1" {
-  count                   = var.preferred_number_of_public_subnets == null ? length(data.aws_availability_zones.available.names) : var.preferred_number_of_public_subnets
-  vpc_id                  = aws_vpc.main.id
-  cidr_block              = cidrsubnet(var.vpc_cidr, 8, count.index)
+resource "aws_subnet" "public" {
+  count  = var.preferred_number_of_public_subnets == null ? length(data.aws_availability_zones.available.names) : var.preferred_number_of_public_subnets   
+  vpc_id = aws_vpc.main.id
+  cidr_block              = cidrsubnet(var.vpc_cidr, 4 , count.index)
   map_public_ip_on_launch = true
   availability_zone       = data.aws_availability_zones.available.names[count.index]
+  tags = merge(
+    var.tags,
+    {
+      Name = format("%s-PrivateSubnet-%s", var.name, count.index)
+    },
+  )
 
-  tags = {
-    Name = "publicSubnet-1"
-  }
 }
 
-resource "aws_subnet" "publicSubnet-2" {
-  vpc_id     = aws_vpc.main.id
-  cidr_block = "10.1.2.0/24"
-  map_public_ip_on_launch = true
-  availability_zone       = "us-east-1b"
-
-  tags = {
-    Name = "publicSubnet-1"
-  }
-}
 
 # private subnets
-resource "aws_subnet" "privateSubnet-1" {
-  vpc_id     = aws_vpc.main.id
-  cidr_block = "10.1.3.0/24"
-  map_public_ip_on_launch = false
-  availability_zone       = "us-east-1a"
+resource "aws_subnet" "private" {
+  count                   = var.preferred_number_of_private_subnets == null ? length(data.aws_availability_zones.available.names) : var.preferred_number_of_private_subnets
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = cidrsubnet(var.vpc_cidr, 8, count.index + 2)
+  map_public_ip_on_launch = true
+  availability_zone       = data.aws_availability_zones.available.names[count.index]
+  tags = merge(
+    var.tags,
+    {
+      Name = format("%s-PrivateSubnet-%s", var.name, count.index)
+    },
+  )
 
-  tags = {
-    Name = "privateSubnet-1"
-  }
 }
 
-resource "aws_subnet" "privateSubnet-2" {
-  vpc_id     = aws_vpc.main.id
-  cidr_block = "10.1.4.0/24"
-  map_public_ip_on_launch = false
-  availability_zone       = "us-east-1b"
 
-  tags = {
-    Name = "privateSubnet-2"
-  }
-}
-
-resource "aws_subnet" "privateSubnet-3" {
-  vpc_id     = aws_vpc.main.id
-  cidr_block = "10.1.5.0/24"
-  map_public_ip_on_launch = false
-  availability_zone       = "us-east-1a"
-
-  tags = {
-    Name = "privateSubnet-3"
-  }
-}
-
-resource "aws_subnet" "privateSubnet-4" {
-  vpc_id     = aws_vpc.main.id
-  cidr_block = "10.1.6.0/24"
-  map_public_ip_on_launch = false
-  availability_zone       = "us-east-1b"
-
-  tags = {
-    Name = "privateSubnet-4"
-  }
-}
 
 # Internet gateway
 resource "aws_internet_gateway" "ig" {
